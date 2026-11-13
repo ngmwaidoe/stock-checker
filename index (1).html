@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock စစ်တဲ့ App</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{margin:0;background:#f1f5f9;color:#0f172a}
+header{background:#16a34a;color:#fff;padding:22px 16px;text-align:center}
+header h1{margin:0;font-size:22px} header p{margin:6px 0 0;opacity:.9;font-size:13px}
+.wrap{max-width:900px;margin:-10px auto 0;padding:0 14px 30px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card b{font-size:22px;display:block;margin-top:4px}.card span{font-size:13px;color:#64748b}
+.red{color:#dc2626}.orange{color:#ea580c}.green{color:#16a34a}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+input,select{padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;background:#fff}
+.search{flex:1;min-width:180px}
+.btn{background:#16a34a;color:#fff;border:0;padding:11px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+.btn2{background:#0f172a;color:#fff;border:0;padding:11px 16px;border-radius:10px;cursor:pointer}
+table{width:100%;background:#fff;border-radius:14px;overflow:hidden;border-collapse:collapse;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+th,td{padding:12px 10px;text-align:left;font-size:14px;border-bottom:1px solid #f1f5f9}
+th{background:#f8fafc;color:#64748b;font-size:12px}
+.small{font-size:12px;color:#64748b}
+.del{background:#fee2e2;color:#dc2626;border:0;padding:6px 10px;border-radius:8px;cursor:pointer}
+.plus{background:#dcfce7;color:#166534;border:0;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700}
+.minus{background:#fef9c3;color:#854d0e;border:0;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700}
+/* Password overlay */
+#lock{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}
+.lock-box{background:#fff;border-radius:18px;padding:28px 22px;max-width:360px;width:100%;text-align:center}
+.lock-box h2{margin:0 0 6px}.lock-box p{color:#64748b;font-size:13px;margin:0 0 16px}
+.lock-box input{width:100%;margin-bottom:10px}
+.lock-box .btn{width:100%}
+.err{color:#dc2626;font-size:13px;min-height:18px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD LOCK -->
+<div id="lock">
+  <div class="lock-box">
+    <div style="font-size:36px">🔒</div>
+    <h2>Stock Checker</h2>
+    <p>ဝင်ရန် Password ရိုက်ထည့်ပါ</p>
+    <input type="password" id="pwInput" placeholder="Password" />
+    <button class="btn" onclick="checkPassword()">ဝင်မည်</button>
+    <div class="err" id="pwError"></div>
+    <p class="small" style="margin-top:14px">မူရင်း Password: <b>1234</b><br>ပြောင်းချင်ရင် Code ထဲမှာ 1234 ကို ရှာပြီး ပြောင်းပါ</p>
+  </div>
+</div>
+
+<header><h1>Stock စစ်တဲ့ App</h1><p>Diana ဆိုင် • ပစ္စည်း စစ်ရန်</p></header>
+<div class="wrap">
+  <div class="cards">
+    <div class="card"><span>စုစုပေါင်း အမျိုးအစား</span><b id="totalTypes">0</b></div>
+    <div class="card"><span>စုစုပေါင်း အရေအတွက်</span><b id="totalQty">0</b></div>
+    <div class="card"><span>ကုန်ခါနီး</span><b class="orange" id="lowCount">0</b></div>
+    <div class="card"><span>ကုန်သွားပြီ</span><b class="red" id="outCount">0</b></div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search" id="search" placeholder="ပစ္စည်းရှာရန်..." oninput="render()">
+    <select id="filterCat" onchange="render()"><option value="">Category အားလုံး</option><option>အစားအစာ</option><option>အဖျော်ရည်</option><option>ဆိုင်သုံးပစ္စည်း</option><option>အခြား</option></select>
+    <button class="btn2" onclick="exportData()">Export</button>
+  </div>
+
+  <div class="toolbar" style="background:#fff;padding:12px;border-radius:14px">
+    <input id="name" placeholder="ပစ္စည်းနာမည်" style="flex:1;min-width:140px">
+    <input id="qty" type="number" placeholder="အရေအတွက်" style="width:120px">
+    <select id="cat"><option>အစားအစာ</option><option>အဖျော်ရည်</option><option>ဆိုင်သုံးပစ္စည်း</option><option>အခြား</option></select>
+    <button class="btn" onclick="addItem()">+ ထည့်မည်</button>
+  </div>
+
+  <table><thead><tr><th>ပစ္စည်း</th><th>Category</th><th>အရေအတွက်</th><th>အခြေအနေ</th><th></th></tr></thead><tbody id="tbody"></tbody></table>
+  <p class="small" style="margin-top:12px">Data က ဒီဖုန်း / ကွန်ပျူတာထဲမှာပဲ သိမ်းထားပါတယ် • Password: 1234</p>
+</div>
+
+<script>
+// ---- PASSWORD ----
+// ဒီနေရာက 1234 ကို မင်းလိုချင်တဲ့ Password နဲ့ လဲလိုက်
+const CORRECT_PASSWORD = "1234";
+function checkPassword(){
+  const v = document.getElementById('pwInput').value;
+  if(v === CORRECT_PASSWORD){
+    document.getElementById('lock').style.display='none';
+    localStorage.setItem('stock_unlocked','yes');
+  } else {
+    document.getElementById('pwError').textContent = 'Password မှားနေပါတယ်';
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPassword(); });
+if(localStorage.getItem('stock_unlocked')==='yes'){ document.getElementById('lock').style.display='none'; }
+
+// ---- STOCK LOGIC ----
+let items = JSON.parse(localStorage.getItem('stock_items')||'[]');
+function save(){ localStorage.setItem('stock_items', JSON.stringify(items)); render(); }
+function addItem(){
+  const name=document.getElementById('name').value.trim();
+  const qty=parseInt(document.getElementById('qty').value||'0');
+  const cat=document.getElementById('cat').value;
+  if(!name) return alert('ပစ္စည်းနာမည် ရိုက်ပါ');
+  items.push({name,qty,cat});
+  document.getElementById('name').value=''; document.getElementById('qty').value='';
+  save();
+}
+function changeQty(i,d){ items[i].qty=Math.max(0, items[i].qty+d); save(); }
+function delItem(i){ if(confirm('ဖျက်မှာလား?')){ items.splice(i,1); save(); } }
+function status(q){ if(q===0) return '<span class="red">ကုန်သွားပြီ</span>'; if(q<=5) return '<span class="orange">ကုန်ခါနီး</span>'; return '<span class="green">လုံလောက်တယ်</span>'; }
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const fc=document.getElementById('filterCat').value;
+  const filtered=items.filter((it,idx)=>{ return (!q||it.name.toLowerCase().includes(q)) && (!fc||it.cat===fc); });
+  document.getElementById('totalTypes').textContent=items.length;
+  document.getElementById('totalQty').textContent=items.reduce((a,b)=>a+b.qty,0);
+  document.getElementById('lowCount').textContent=items.filter(x=>x.qty>0&&x.qty<=5).length;
+  document.getElementById('outCount').textContent=items.filter(x=>x.qty===0).length;
+  document.getElementById('tbody').innerHTML = filtered.map((it,idx)=>{
+    const realIdx = items.indexOf(it);
+    return `<tr><td><b>${it.name}</b></td><td>${it.cat}</td><td>${it.qty}</td><td>${status(it.qty)}</td><td><button class="plus" onclick="changeQty(${realIdx},1)">+</button> <button class="minus" onclick="changeQty(${realIdx},-1)">-</button> <button class="del" onclick="delItem(${realIdx})">ဖျက်</button></td></tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">ပစ္စည်း မရှိသေးပါ • အပေါ်ကနေ ထည့်ကြည့်ပါ</td></tr>';
+}
+function exportData(){ const txt = items.map(i=>`${i.name} - ${i.qty} (${i.cat})`).join('\n'); const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='stock.txt'; a.click(); }
+render();
+</script>
+</body>
+</html>
